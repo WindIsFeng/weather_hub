@@ -1,0 +1,11 @@
+name: weather-hub
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - PyYAML>=6,<7
+      - pytest>=8,<10
+      - -e .

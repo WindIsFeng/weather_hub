@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "weather-hub"
+version = "0.1.0"
+description = "Unified orchestration for local and remote AI weather-model inference"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["PyYAML>=6,<7"]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10"]
+
+[project.scripts]
+weather-hub = "weather_hub.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["weather_hub*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

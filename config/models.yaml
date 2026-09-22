@@ -1,0 +1,47 @@
+version: 1
+controller_jobs_dir: ../runs
+
+targets:
+  local:
+    kind: local
+    jobs_dir: ../runs
+    conda_executable: conda
+    models:
+      pangu:
+        project_dir: ../../pangu-weather
+        conda_env: pangu
+        module: pangu_weather
+        base_config: configs/default.yaml
+        device_id: 0
+      fengwu:
+        project_dir: ../../fengwu
+        conda_env: fengwu
+        module: fengwu_weather
+        base_config: configs/default.yaml
+        device_id: 0
+      fuxi:
+        project_dir: ../../fuxi
+        conda_env: fuxi
+        module: fuxi_weather
+        base_config: configs/default.yaml
+        device_id: 0
+      graphcast:
+        project_dir: ../../graphcast
+        conda_env: graphcast
+        module: graphcast_weather
+        base_config: configs/default.yaml
+        device_id: 0
+      aurora:
+        project_dir: ../../aurora
+        conda_env: aurora
+        module: aurora_weather
+        base_config: configs/default.yaml
+        device_id: 0
+
+# Add an SSH target on the controller. The remote host needs its own registry
+# with a local target and pre-deployed model repositories, environments and data.
+#  cloud-a:
+#    kind: ssh
+#    host: cloud-a
+#    remote_executable: /opt/weather-hub/.venv/bin/weather-hub
+#    remote_config: /opt/weather-hub/config/models.yaml
