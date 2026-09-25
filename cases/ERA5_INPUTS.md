@@ -24,24 +24,29 @@ describe those steps.
 
 ```bash
 cd /scratch/hufeng/ai_weather_models
-conda run -n fuxi python scripts/download_era5_inputs.py \
-  --output-dir /scratch/hufeng/ai_weather_models/data/era5_coastal_2022_2024
+conda run -n fuxi python scripts/download_era5_inputs.py
 
-# Start or resume downloads; the plan command above makes no CDS requests.
-conda run --no-capture-output -n fuxi python scripts/download_era5_inputs.py \
-  --output-dir /scratch/hufeng/ai_weather_models/data/era5_coastal_2022_2024 \
-  --download
+# Start or resume downloads and keep a log for another terminal.
+set -o pipefail
+conda run --no-capture-output -n fuxi python -u scripts/download_era5_inputs.py \
+  --download 2>&1 | tee /scratch/hufeng/ai_weather_models/era5-download.log
+
+# In another terminal, follow the overall file count and transfer progress.
+tail -f /scratch/hufeng/ai_weather_models/era5-download.log
 
 # Verify the complete archive before transfer.
 conda run -n fuxi python scripts/download_era5_inputs.py \
-  --output-dir /scratch/hufeng/ai_weather_models/data/era5_coastal_2022_2024 \
   --verify
 ```
 
-The layout is:
+The default download directory is `/data/hufeng/ai_weather_models/`. The
+directory must exist and be writable before starting `--download`. On this
+machine, `/data/hufeng/ai_weather_models/` has not yet been created and its
+parent directory is not writable by `hufeng`; an administrator must create it
+and grant write access before the download can start. The layout is:
 
 ```text
-era5_coastal_2022_2024/
+ai_weather_models/
 ├── 20220127/
 │   ├── surface.nc
 │   ├── surface.json
@@ -53,8 +58,8 @@ era5_coastal_2022_2024/
 └── static.nc
 ```
 
-Transfer the whole directory to a single absolute path on the inference host,
-for example `/data/era5_coastal_2022_2024/`. The `.json` files carry request
+Transfer the whole directory to the same absolute path on the inference host,
+`/data/hufeng/ai_weather_models/`. The `.json` files carry request
 details and checksums for transfer checks; the model readers use the `.nc`
 files. Preserve the date directories and file names.
 
@@ -63,13 +68,13 @@ files. Preserve the date directories and file names.
 On the inference host, edit each model's `configs/default.yaml` (or a copied
 configuration referenced by its Weather Hub registry). Use these settings in
 addition to the existing model paths and options. The example assumes the
-archive is at `/data/era5_coastal_2022_2024/`.
+archive is at `/data/hufeng/ai_weather_models/`.
 
 | Model | ERA5 path settings |
 | --- | --- |
-| Pangu, FengWu, GraphCast | `surface_file: /data/era5_coastal_2022_2024/{init:%Y%m%d}/surface.nc`<br>`upper_file: /data/era5_coastal_2022_2024/{init:%Y%m%d}/upper.nc` |
-| FuXi | Same `surface_file` and `upper_file`, plus `precipitation_file: /data/era5_coastal_2022_2024/precipitation/{init:%Y%m%d}.nc` |
-| Aurora | `static_file: /data/era5_coastal_2022_2024/static.nc`<br>`surface_file: /data/era5_coastal_2022_2024/{init:%Y%m%d}/surface.nc`<br>`atmospheric_file: /data/era5_coastal_2022_2024/{init:%Y%m%d}/upper.nc` |
+| Pangu, FengWu, GraphCast | `surface_file: /data/hufeng/ai_weather_models/{init:%Y%m%d}/surface.nc`<br>`upper_file: /data/hufeng/ai_weather_models/{init:%Y%m%d}/upper.nc` |
+| FuXi | Same `surface_file` and `upper_file`, plus `precipitation_file: /data/hufeng/ai_weather_models/precipitation/{init:%Y%m%d}.nc` |
+| Aurora | `static_file: /data/hufeng/ai_weather_models/static.nc`<br>`surface_file: /data/hufeng/ai_weather_models/{init:%Y%m%d}/surface.nc`<br>`atmospheric_file: /data/hufeng/ai_weather_models/{init:%Y%m%d}/upper.nc` |
 
 Set `download_missing: false` for all five models. These are explicitly
 configured input files, so model-managed cache sidecars are not required. A

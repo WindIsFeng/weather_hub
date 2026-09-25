@@ -11,6 +11,10 @@ import argparse
 import csv
 import hashlib
 import json
+import sys
+import tempfile
+import threading
+import time
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -19,6 +23,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CASES = ROOT / "cases/weather_hub_cases_2022_2024_v2026-09-22.csv"
+DEFAULT_OUTPUT_DIR = Path("/data/hufeng/ai_weather_models")
+PROGRESS_INTERVAL_SECONDS = 15
 LEVELS = (50, 100, 150, 200, 250, 300, 400, 500, 600, 700, 850, 925, 1000)
 SURFACE = (
     "2m_temperature", "10m_u_component_of_wind", "10m_v_component_of_wind",
@@ -191,7 +197,11 @@ def verified(job: Job) -> bool:
 def download(jobs: list[Job]) -> None:
     import cdsapi
 
-    client = cdsapi.Client(timeout=120, retry_max=3, sleep_max=20, quiet=True, progress=False)
+    interactive = sys.stderr.isatty()
+    client = cdsapi.Client(
+        timeout=120, retry_max=3, sleep_max=20,
+        quiet=not interactive, progress=interactive,
+    )
     for index, job in enumerate(jobs, 1):
         if verified(job):
             print(f"[{index}/{len(jobs)}] verified: {job.path}", flush=True)
@@ -202,6 +212,20 @@ def download(jobs: list[Job]) -> None:
         temporary = job.path.with_suffix(".nc.download")
         temporary.unlink(missing_ok=True)
         print(f"[{index}/{len(jobs)}] downloading: {job.path}", flush=True)
+        started = time.monotonic()
+        stopped = threading.Event()
+
+        def report_progress() -> None:
+            while not stopped.wait(PROGRESS_INTERVAL_SECONDS):
+                elapsed = int(time.monotonic() - started)
+                try:
+                    detail = f"{temporary.stat().st_size / 2**20:.1f} MiB received"
+                except FileNotFoundError:
+                    detail = "waiting for CDS response"
+                print(f"[{index}/{len(jobs)}] {elapsed}s elapsed; {detail}", flush=True)
+
+        reporter = threading.Thread(target=report_progress, daemon=True)
+        reporter.start()
         try:
             client.retrieve(job.dataset, job.request, str(temporary))
             validate_netcdf(job, temporary)
@@ -213,14 +237,21 @@ def download(jobs: list[Job]) -> None:
             sidecar_path(job.path).write_text(
                 json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8"
             )
+            print(
+                f"[{index}/{len(jobs)}] complete: {size / 2**20:.1f} MiB "
+                f"in {int(time.monotonic() - started)}s",
+                flush=True,
+            )
         finally:
+            stopped.set()
+            reporter.join()
             temporary.unlink(missing_ok=True)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cases", type=Path, default=DEFAULT_CASES)
-    parser.add_argument("--output-dir", required=True, type=Path)
+    parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     action = parser.add_mutually_exclusive_group()
     action.add_argument("--download", action="store_true", help="contact CDS and download missing files")
     action.add_argument("--verify", action="store_true", help="check all downloaded files")
@@ -231,6 +262,12 @@ def main() -> None:
               for kind in ("surface", "upper", "precipitation", "static")}
     print(f"Initial times: {len(initial_times)}; files: {counts}; root: {args.output_dir.resolve()}")
     if args.download:
+        try:
+            args.output_dir.mkdir(parents=True, exist_ok=True)
+            with tempfile.TemporaryFile(dir=args.output_dir):
+                pass
+        except OSError as exc:
+            parser.error(f"output directory is not writable: {args.output_dir}: {exc}")
         download(jobs)
     elif args.verify:
         failed = [str(job.path) for job in jobs if not verified(job)]
