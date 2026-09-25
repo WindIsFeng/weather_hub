@@ -1,3 +1,4 @@
+import csv
 from pathlib import Path
 
 import pytest
@@ -104,3 +105,27 @@ def test_adapter_rejects_protected_override(tmp_path):
     )
     with pytest.raises(ValueError, match="unsupported config overrides"):
         adapter.validate_request(request)
+
+
+def test_aurora_adapter_writes_columns_accepted_by_model(tmp_path):
+    project = tmp_path / "aurora"
+    project.mkdir()
+    config = project / "default.yaml"
+    config.write_text("device: cpu\n", encoding="utf-8")
+    installation = ModelInstallation(
+        ModelId.AURORA, project, "aurora", "aurora_weather", config
+    )
+    target = TargetConfig(
+        "local", "local", tmp_path / "runs", models={ModelId.AURORA: installation}
+    )
+    adapter = adapter_for(installation, target)
+    request = ForecastRequest(model=ModelId.AURORA, cases=(case(),))
+    job = tmp_path / "job"
+    job.mkdir()
+    _, cases_path = adapter.prepare(request, job)
+    with cases_path.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    assert list(rows[0]) == [
+        "case_id", "storm_id", "init_time", "forecast_hours", "name", "basin"
+    ]
+    assert rows[0]["forecast_hours"] == "72"

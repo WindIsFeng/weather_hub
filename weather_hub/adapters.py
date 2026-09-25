@@ -217,11 +217,16 @@ class ModelAdapter:
             "name",
             "basin",
         )
+        # Aurora's case reader accepts the shared fields except output_interval_hours;
+        # its six-hour cadence is fixed by the model.
+        if self.model == ModelId.AURORA:
+            fields = tuple(field for field in fields if field != "output_interval_hours")
         with cases_path.open("w", newline="", encoding="utf-8") as handle:
             writer = csv.DictWriter(handle, fieldnames=fields)
             writer.writeheader()
             for case in request.cases:
-                writer.writerow(case.to_dict())
+                record = case.to_dict()
+                writer.writerow({field: record[field] for field in fields})
         return config_path, cases_path
 
     def run_command(
