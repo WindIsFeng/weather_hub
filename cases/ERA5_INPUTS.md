@@ -24,11 +24,13 @@ describe those steps.
 
 ```bash
 cd /scratch/hufeng/ai_weather_models
-conda run -n fuxi python scripts/download_era5_inputs.py
+conda run -n fuxi python scripts/download_era5_inputs.py \
+  --output-dir /data/hufeng/ai_weather_models
 
 # Start or resume in a detached session. The process survives terminal closure.
 setsid nohup /home/hufeng/miniconda3/envs/fuxi/bin/python -u \
-  scripts/download_era5_inputs.py --download \
+  scripts/download_era5_inputs.py --output-dir /data/hufeng/ai_weather_models \
+  --download \
   >> /scratch/hufeng/ai_weather_models/era5-download.log 2>&1 < /dev/null &
 printf '%s\n' "$!" > /scratch/hufeng/ai_weather_models/era5-download.pid
 
@@ -39,12 +41,14 @@ ps -p "$(cat /scratch/hufeng/ai_weather_models/era5-download.pid)" -o pid=,stat=
 
 # Verify the complete archive before transfer.
 conda run -n fuxi python scripts/download_era5_inputs.py \
+  --output-dir /data/hufeng/ai_weather_models \
   --verify
 ```
 
-The default download directory is `/data/hufeng/ai_weather_models/`. The
-directory must exist and be writable before starting `--download`. The
-download creates each date directory as needed. The layout is:
+The script's default download directory is `era5_inputs/` beside `scripts/`
+and `cases/`, suitable for use on another computer. The server commands above
+set `--output-dir /data/hufeng/ai_weather_models` explicitly. The destination
+must be writable; date directories are created as needed. The layout is:
 
 ```text
 ai_weather_models/

@@ -40,7 +40,7 @@ def test_download_reports_progress_and_resumes_without_redownloading(tmp_path, m
         calls = 0
 
         def __init__(self, **kwargs):
-            pass
+            assert kwargs["retry_max"] == 50
 
         def retrieve(self, dataset, request, target):
             self.__class__.calls += 1

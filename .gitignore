@@ -6,3 +6,5 @@ runs/
 data/
 era5-download.log
 era5-download.pid
+era5_inputs/
+exports/

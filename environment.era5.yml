@@ -1,0 +1,11 @@
+name: era5-inputs
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - numpy
+  - xarray
+  - netcdf4
+  - pip:
+      - cdsapi>=0.7.7,<1

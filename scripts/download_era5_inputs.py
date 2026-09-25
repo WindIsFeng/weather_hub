@@ -23,7 +23,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CASES = ROOT / "cases/weather_hub_cases_2022_2024_v2026-09-22.csv"
-DEFAULT_OUTPUT_DIR = Path("/data/hufeng/ai_weather_models")
+DEFAULT_OUTPUT_DIR = ROOT / "era5_inputs"
 PROGRESS_INTERVAL_SECONDS = 15
 LEVELS = (50, 100, 150, 200, 250, 300, 400, 500, 600, 700, 850, 925, 1000)
 SURFACE = (
@@ -199,7 +199,7 @@ def download(jobs: list[Job]) -> None:
 
     interactive = sys.stderr.isatty()
     client = cdsapi.Client(
-        timeout=120, retry_max=3, sleep_max=20,
+        timeout=120, retry_max=50, sleep_max=20,
         quiet=not interactive, progress=interactive,
     )
     for index, job in enumerate(jobs, 1):
