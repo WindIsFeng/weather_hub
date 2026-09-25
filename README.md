@@ -27,6 +27,9 @@ different registry.
 
 Use the same case CSV columns accepted by the five model projects:
 
+The frozen 2022–2024 coastal-impact batch is available under
+[`cases/`](cases/README.md), including 570 run-ready cases and an event index.
+
 ```csv
 case_id,storm_id,init_time,forecast_hours,output_interval_hours,name,basin
 ragasa_72h,ragasa_2025,2025-09-22T00:00:00Z,72,6,Ragasa,WP

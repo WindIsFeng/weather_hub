@@ -1,0 +1,42 @@
+{
+  "source_release_id": "coastal-impact-2022-2024-ibtracs-v04r01-2026-09-22-gshhg-2.3.7",
+  "weather_hub_contract_commit": "9d12a65727a75cb87796e5749a93cbb6d6d2cd50",
+  "models": [
+    "pangu",
+    "fengwu",
+    "fuxi",
+    "graphcast",
+    "aurora"
+  ],
+  "rule": "forecast_hours = ceil((reference_time - init_time) / 6 hours) * 6 hours",
+  "output_interval_hours": 6,
+  "event_count": 114,
+  "case_count": 570,
+  "unique_init_time_count": 510,
+  "forecast_hours_counts": {
+    "24": 55,
+    "30": 59,
+    "48": 55,
+    "54": 59,
+    "72": 55,
+    "78": 59,
+    "96": 55,
+    "102": 59,
+    "120": 55,
+    "126": 59
+  },
+  "sources": {
+    "data/catalogs/coastal_impact_events_2022_2024_v2026-09-22.csv": "6deeac85ab0980935b98389612d4da73411a333d3863365aa899b6ef5bd9d876",
+    "data/catalogs/coastal_impact_forecast_cases_2022_2024_v2026-09-22.csv": "5caafbd202bf85560e1a4ebe96834a67aefd52d734a1cb612a7fe62b1a993443"
+  },
+  "artifacts": {
+    "weather_hub_cases_2022_2024_v2026-09-22.csv": {
+      "rows": 570,
+      "sha256": "0813a056a1971fe7c28efaec6214ad19546acd5246bea3737776bd909d683cd9"
+    },
+    "weather_hub_case_index_2022_2024_v2026-09-22.csv": {
+      "rows": 570,
+      "sha256": "aad0294c80214a594b44d5c676cd35ab6527f5ec075e5b7ca76eb043d95a88c4"
+    }
+  }
+}
