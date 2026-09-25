@@ -24,3 +24,6 @@ weather-hub run --model pangu \
 Use `fengwu`, `fuxi`, `graphcast`, or `aurora` for the other models. Remove
 `--dry-run` to launch inference once the model environments, weights, and
 input fields are ready.
+
+To prepare and transfer the shared ERA5 initial fields without running any
+model, see [ERA5 input archive](ERA5_INPUTS.md).
