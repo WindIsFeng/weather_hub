@@ -26,13 +26,16 @@ describe those steps.
 cd /scratch/hufeng/ai_weather_models
 conda run -n fuxi python scripts/download_era5_inputs.py
 
-# Start or resume downloads and keep a log for another terminal.
-set -o pipefail
-conda run --no-capture-output -n fuxi python -u scripts/download_era5_inputs.py \
-  --download 2>&1 | tee /scratch/hufeng/ai_weather_models/era5-download.log
+# Start or resume in a detached session. The process survives terminal closure.
+setsid nohup /home/hufeng/miniconda3/envs/fuxi/bin/python -u \
+  scripts/download_era5_inputs.py --download \
+  >> /scratch/hufeng/ai_weather_models/era5-download.log 2>&1 < /dev/null &
+printf '%s\n' "$!" > /scratch/hufeng/ai_weather_models/era5-download.pid
 
-# In another terminal, follow the overall file count and transfer progress.
+# From any terminal, inspect the latest progress or follow it live.
+tail -n 20 /scratch/hufeng/ai_weather_models/era5-download.log
 tail -f /scratch/hufeng/ai_weather_models/era5-download.log
+ps -p "$(cat /scratch/hufeng/ai_weather_models/era5-download.pid)" -o pid=,stat=,etime=,cmd=
 
 # Verify the complete archive before transfer.
 conda run -n fuxi python scripts/download_era5_inputs.py \
@@ -40,10 +43,8 @@ conda run -n fuxi python scripts/download_era5_inputs.py \
 ```
 
 The default download directory is `/data/hufeng/ai_weather_models/`. The
-directory must exist and be writable before starting `--download`. On this
-machine, `/data/hufeng/ai_weather_models/` has not yet been created and its
-parent directory is not writable by `hufeng`; an administrator must create it
-and grant write access before the download can start. The layout is:
+directory must exist and be writable before starting `--download`. The
+download creates each date directory as needed. The layout is:
 
 ```text
 ai_weather_models/

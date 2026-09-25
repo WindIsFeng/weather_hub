@@ -5,3 +5,4 @@ build/
 runs/
 data/
 era5-download.log
+era5-download.pid
