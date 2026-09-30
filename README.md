@@ -23,6 +23,9 @@ The operational registry is `config/models.yaml`. Relative paths are resolved
 against that file. Set `WEATHER_HUB_CONFIG` or pass global `--config` to use a
 different registry.
 
+For deployment on a new rented GPU host and the complete 570-case batch, see
+the [Chinese A100 deployment and experiment guide](README_A100_DEPLOY.zh-CN.md).
+
 ## Run forecasts
 
 Use the same case CSV columns accepted by the five model projects:
