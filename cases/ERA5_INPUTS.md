@@ -5,7 +5,7 @@ the initial fields needed by all five models from the frozen case CSV. It does
 not run inference or download ERA5 fields at future forecast valid times for
 verification. The script groups timestamps by UTC date, checks coordinates,
 variables and times in each NetCDF response, and records a SHA-256 sidecar.
-Rerunning `--download` verifies and skips complete files.
+Rerunning `--download` verifies complete files and resumes interrupted transfers.
 
 The plan contains 510 unique initialization times, 933 distinct 6-hourly input
 frames, and 5,598 distinct hourly precipitation times for FuXi. It produces
@@ -25,11 +25,11 @@ describe those steps.
 ```bash
 cd /scratch/hufeng/ai_weather_models
 conda run -n fuxi python scripts/download_era5_inputs.py \
-  --output-dir /data/hufeng/ai_weather_models
+  --output-dir /data/hufeng/ai_weather_models/era5_inputs
 
 # Start or resume in a detached session. The process survives terminal closure.
 setsid nohup /home/hufeng/miniconda3/envs/fuxi/bin/python -u \
-  scripts/download_era5_inputs.py --output-dir /data/hufeng/ai_weather_models \
+  scripts/download_era5_inputs.py --output-dir /data/hufeng/ai_weather_models/era5_inputs \
   --download \
   >> /scratch/hufeng/ai_weather_models/era5-download.log 2>&1 < /dev/null &
 printf '%s\n' "$!" > /scratch/hufeng/ai_weather_models/era5-download.pid
@@ -41,17 +41,17 @@ ps -p "$(cat /scratch/hufeng/ai_weather_models/era5-download.pid)" -o pid=,stat=
 
 # Verify the complete archive before transfer.
 conda run -n fuxi python scripts/download_era5_inputs.py \
-  --output-dir /data/hufeng/ai_weather_models \
+  --output-dir /data/hufeng/ai_weather_models/era5_inputs \
   --verify
 ```
 
 The script's default download directory is `era5_inputs/` beside `scripts/`
 and `cases/`, suitable for use on another computer. The server commands above
-set `--output-dir /data/hufeng/ai_weather_models` explicitly. The destination
+set `--output-dir /data/hufeng/ai_weather_models/era5_inputs` explicitly. The destination
 must be writable; date directories are created as needed. The layout is:
 
 ```text
-ai_weather_models/
+era5_inputs/
 ├── 20220127/
 │   ├── surface.nc
 │   ├── surface.json
@@ -64,22 +64,22 @@ ai_weather_models/
 ```
 
 Transfer the whole directory to the same absolute path on the inference host,
-`/data/hufeng/ai_weather_models/`. The `.json` files carry request
-details and checksums for transfer checks; the model readers use the `.nc`
-files. Preserve the date directories and file names.
+`/data/hufeng/ai_weather_models/era5_inputs/`. The `.json` files carry request details and checksums; keep them with the
+`.nc` files. Temporary CDS metadata under `runs/era5-download/` is removed
+after a complete download. Preserve the date directories and file names.
 
 ## Point the five model configurations to the archive
 
 On the inference host, edit each model's `configs/default.yaml` (or a copied
 configuration referenced by its Weather Hub registry). Use these settings in
 addition to the existing model paths and options. The example assumes the
-archive is at `/data/hufeng/ai_weather_models/`.
+archive is at `/data/hufeng/ai_weather_models/era5_inputs/`.
 
 | Model | ERA5 path settings |
 | --- | --- |
-| Pangu, FengWu, GraphCast | `surface_file: /data/hufeng/ai_weather_models/{init:%Y%m%d}/surface.nc`<br>`upper_file: /data/hufeng/ai_weather_models/{init:%Y%m%d}/upper.nc` |
-| FuXi | Same `surface_file` and `upper_file`, plus `precipitation_file: /data/hufeng/ai_weather_models/precipitation/{init:%Y%m%d}.nc` |
-| Aurora | `static_file: /data/hufeng/ai_weather_models/static.nc`<br>`surface_file: /data/hufeng/ai_weather_models/{init:%Y%m%d}/surface.nc`<br>`atmospheric_file: /data/hufeng/ai_weather_models/{init:%Y%m%d}/upper.nc` |
+| Pangu, FengWu, GraphCast | `surface_file: /data/hufeng/ai_weather_models/era5_inputs/{init:%Y%m%d}/surface.nc`<br>`upper_file: /data/hufeng/ai_weather_models/era5_inputs/{init:%Y%m%d}/upper.nc` |
+| FuXi | Same `surface_file` and `upper_file`, plus `precipitation_file: /data/hufeng/ai_weather_models/era5_inputs/precipitation/{init:%Y%m%d}.nc` |
+| Aurora | `static_file: /data/hufeng/ai_weather_models/era5_inputs/static.nc`<br>`surface_file: /data/hufeng/ai_weather_models/era5_inputs/{init:%Y%m%d}/surface.nc`<br>`atmospheric_file: /data/hufeng/ai_weather_models/era5_inputs/{init:%Y%m%d}/upper.nc` |
 
 Set `download_missing: false` for all five models. These are explicitly
 configured input files, so model-managed cache sidecars are not required. A

@@ -9,3 +9,4 @@ dependencies:
   - netcdf4
   - pip:
       - cdsapi>=0.7.7,<1
+      - requests>=2.28
